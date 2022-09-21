@@ -1,14 +1,19 @@
+import schedule from 'node-schedule'
+import dayjs from 'dayjs'
 import {
   getAccessToken,
   sendMessageReply,
   getAggregatedData,
-  getCallbackTemplateParams
+  getCallbackTemplateParams,
 } from './src/services/index.js'
-import { config } from './config/index.js'
-import { mainForTest } from './main-for-test.js'
+import { config } from './config/exp-config.js'
+import { cornTime } from './config/server-config.js'
+import mainForTest from './main-for-test.js'
 
-const mainForProd = async () => {
+export default async function mainForProd() {
   // 获取accessToken
+  console.log('\n\n')
+  console.log(dayjs().format('YYYY-MM-DD HH:mm:ss'))
   console.log('---')
   console.log('【连接微信公众平台】开始')
   const accessToken = await getAccessToken()
@@ -34,11 +39,10 @@ const mainForProd = async () => {
     successPostNum,
     failPostNum,
     successPostIds,
-    failPostIds
+    failPostIds,
   } = await sendMessageReply(aggregatedData, accessToken)
   console.log('【常规模板】推送结束')
   console.log('---')
-
 
   // 获取回执信息
   const callbackTemplateParams = getCallbackTemplateParams({
@@ -46,7 +50,7 @@ const mainForProd = async () => {
     successPostNum,
     failPostNum,
     successPostIds,
-    failPostIds
+    failPostIds,
   })
 
   // 发送回执
@@ -60,9 +64,15 @@ const mainForProd = async () => {
 }
 
 const main = () => {
-  if (process.env.APP_MODE === 'test'){
+  if (process.env.APP_MODE === 'params-log') {
     mainForTest()
-  } else {
+  } else if (process.env.APP_MODE === 'server') {
+    console.log('======【定时推送服务已启动, enjoying it】======')
+    console.log(`目前定时推送的配置为：【${cornTime}】`)
+    schedule.scheduleJob(cornTime, () => {
+      mainForProd()
+    })
+  } else if (process.env.APP_MODE === 'prod') {
     mainForProd()
   }
 }
